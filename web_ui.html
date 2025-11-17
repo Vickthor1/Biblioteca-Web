@@ -1,0 +1,233 @@
+<!-- Nova Web UI Completa com CRUD de Usuários, Livros, Empréstimos, Logs,
+Dashboard, Login e Tema Moderno -->
+<!-- OBS: Backend atualizado será entregue em outro arquivo (backend_full.py) -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Biblioteca Universitária - Painel Completo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 0;
+    }
+    header {
+        background: #4c6ef5;
+        padding: 16px;
+        color: white;
+        font-size: 22px;
+        font-weight: 600;
+        text-align: center;
+    }
+    .container {
+        display: flex;
+        height: calc(100vh - 70px);
+    }
+    .sidebar {
+        width: 260px;
+        background: #ffffff;
+        border-right: 1px solid #dcdcdc;
+        padding-top: 20px;
+    }
+    .sidebar button {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        background: none;
+        text-align: left;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .sidebar button:hover {
+        background: #eef2ff;
+    }
+    .content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    .card {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+    }
+    table th, table td {
+        border: 1px solid #dcdcdc;
+        padding: 10px;
+    }
+    table th {
+        background: #edf2ff;
+    }
+    input, select {
+        padding: 8px;
+        margin: 4px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+    button.action {
+        padding: 10px 16px;
+        background: #4c6ef5;
+        border: none;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    button.action:hover {
+        background: #3c5ae0;
+    }
+</style>
+</head>
+<body>
+<header>Biblioteca Universitária - Painel Completo</header>
+<div class="container">
+    <div class="sidebar">
+        <button onclick="showTab('login')">Login</button>
+        <button onclick="showTab('dashboard')">Dashboard</button>
+        <button onclick="showTab('usuarios')">Usuários</button>
+        <button onclick="showTab('livros')">Livros</button>
+        <button onclick="showTab('emprestimos')">Empréstimos</button>
+        <button onclick="showTab('logs')">Logs</button>
+    </div>
+
+    <div class="content" id="contentArea">
+        <!-- Conteúdo dinâmico será inserido aqui pelo JS -->
+    </div>
+</div>
+
+<script>
+function showTab(tab) {
+    if(tab === 'login') {
+        document.getElementById('contentArea').innerHTML = `
+            <div class='card'>
+                <h2>Login</h2>
+                <p>Acesso do administrador e leitor.</p>
+                <input placeholder='Usuário' id='login_user'>
+                <input type='password' placeholder='Senha' id='login_pass'>
+                <button class='action' onclick='login()'>Entrar</button>
+            </div>`;
+    }
+    if(tab === 'dashboard') {
+        document.getElementById('contentArea').innerHTML = `
+            <div class='card'>
+                <h2>Dashboard</h2>
+                <p>Gráficos e indicadores serão colocados aqui.</p>
+            </div>`;
+    }
+    if(tab === 'usuarios') {
+        document.getElementById('contentArea').innerHTML = `
+            <div class='card'>
+                <h2>Gerenciar Usuários</h2>
+                <input id='u_nome' placeholder='Nome'>
+                <input id='u_tipo' placeholder='Tipo'>
+                <input id='u_email' placeholder='Email'>
+                <button class='action' onclick='addUsuario()'>Adicionar</button>
+                <div id='usuariosTable'></div>
+            </div>`;
+        loadUsuarios();
+    }
+    if(tab === 'livros') {
+        document.getElementById('contentArea').innerHTML = `
+            <div class='card'>
+                <h2>Gerenciar Livros</h2>
+                <input id='l_titulo' placeholder='Título'>
+                <input id='l_autor' placeholder='Autor'>
+                <input id='l_isbn' placeholder='ISBN'>
+                <input id='l_qtd' placeholder='Quantidade'>
+                <button class='action' onclick='addLivro()'>Adicionar</button>
+                <div id='livrosTable'></div>
+            </div>`;
+        loadLivros();
+    }
+    if(tab === 'emprestimos') {
+        document.getElementById('contentArea').innerHTML = `
+            <div class='card'>
+                <h2>Empréstimos</h2>
+                <input id='e_usuario' placeholder='Usuario ID'>
+                <input id='e_livro' placeholder='Livro ID'>
+                <button class='action' onclick='addEmprestimo()'>Registrar</button>
+                <button class='action' onclick='filtroAndamento()'>Filtrar em andamento</button>
+                <div id='emprestimosTable'></div>
+            </div>`;
+        loadEmprestimos();
+    }
+    if(tab === 'logs') {
+        document.getElementById('contentArea').innerHTML = `
+            <div class='card'>
+                <h2>Logs do Sistema</h2>
+                <div id='logsTable'></div>
+            </div>`;
+        loadLogs();
+    }
+}
+
+showTab('dashboard');
+</script>
+  <!-- Auth + API integration -->
+  <script>
+    async function doLogin(user, pass){
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({user, password: pass})
+      });
+      const j = await res.json();
+      if(res.ok){
+        localStorage.setItem('auth_token', j.token);
+        localStorage.setItem('auth_role', j.role);
+        return {ok:true, role:j.role};
+      } else {
+        return {ok:false, error:j.error || 'login failed'};
+      }
+    }
+
+    function authHeaders(){
+      const t = localStorage.getItem('auth_token');
+      return t ? {'X-Auth-Token': t, 'Content-Type':'application/json'} : {'Content-Type':'application/json'};
+    }
+
+    async function apiGet(url){
+      return fetch(url, {headers: authHeaders()}).then(r => r.json());
+    }
+
+    async function apiPost(url, body){
+      return fetch(url, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body || {})
+      }).then(r => r.json());
+    }
+
+    async function apiPut(url, body){
+      return fetch(url, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(body || {})
+      }).then(r => r.json());
+    }
+
+    async function apiDelete(url){
+      return fetch(url, {
+        method: 'DELETE',
+        headers: authHeaders()
+      }).then(r => r.json());
+    }
+  </script>
+</body>
+</html>
